@@ -29,6 +29,30 @@ tail -f /app/newrelic/logs/newrelic_agent_DotNetNewRelicMemoryLeak.log
 while true; do date; curl -v http://localhost:5001/MemoryLeak/memoryinfo | jq .; sleep 5; done
 ```
 
+The output of the memory info endpoint looks something like this. Pay close attention to `privateMemorySize`:
+```json
+{
+  "instanceId": "boxer",
+  "totalMemory": "55.666 MB",
+  "totalAllocated": "77.724 MB",
+  "gen1CollectionCount": 0,
+  "gen2CollectionCount": 0,
+  "gen3CollectionCount": 0,
+  "heapSize": "8.521 MB",
+  "memoryLoad": "8.443 GB",
+  "highMemoryLoadThreshold": "14.073 GB",
+  "fragmented": "1.479 MB",
+  "totalAvailableMemory": "15.637 GB",
+  "handles": 205,
+  "pagedMemorySize64": "8 KB",
+  "workingSet": "829.707 MB",
+  "privateMemorySize": "1.037 GB",
+  "virtualMemorySize": "20.002 GB",
+  "peakVirtualMemorySize": "20.064 GB",
+  "peakWorkingSet": "829.707 MB"
+}
+```
+
 6. To reconfigure ServicePointManager hit the `/MemoryLeak` endpoint. This will set `ServicePointManager.CheckCertificateRevocationList = true;`:
 
 ```shell
