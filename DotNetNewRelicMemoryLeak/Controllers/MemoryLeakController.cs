@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.IO.Compression;
 using System.Net;
 using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -14,15 +17,10 @@ namespace DotNetNewRelicMemoryLeak.Controllers
     public class MemoryLeakController : ControllerBase
     {
         private readonly ILogger<MemoryLeakController> _logger;
-        private readonly HttpClient _httpClient;
 
         public MemoryLeakController(ILogger<MemoryLeakController> logger)
         {
             _logger = logger;
-            _httpClient = new HttpClient(new HttpClientHandler
-            {
-                AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
-            });
         }
 
         [HttpGet]
@@ -39,6 +37,47 @@ namespace DotNetNewRelicMemoryLeak.Controllers
             GC.Collect();
             GC.WaitForFullGCComplete();
             return Ok("GC complete");
+        }
+
+        public IDictionary<string, object> StandardFields()
+        {
+            return new Dictionary<string, object>() {
+                {"id", Guid.NewGuid().ToString()}
+            };
+        }
+
+        [HttpGet("makerequest")]
+        public async Task<ActionResult> MakeRequest()
+        {
+            var request = WebRequest.Create("https://collector.newrelic.com");
+            request.Method = "POST";
+            using (var outputStream = request.GetRequestStream())
+            {
+                if (outputStream == null)
+                    throw new NullReferenceException("outputStream");
+
+                outputStream.Write(Encoding.ASCII.GetBytes("{}"), 0, (int)request.ContentLength);
+            }
+
+            using (var response = request.GetResponse())
+            {
+                var responseStream = response.GetResponseStream();
+                if (responseStream == null)
+                    throw new NullReferenceException("responseStream");
+                if (response.Headers == null)
+                    throw new NullReferenceException("response.Headers");
+
+                var contentTypeEncoding = response.Headers.Get("content-encoding");
+                if ("gzip".Equals(contentTypeEncoding))
+                    responseStream = new GZipStream(responseStream, CompressionMode.Decompress);
+
+                using (responseStream)
+                using (var reader = new StreamReader(responseStream, Encoding.UTF8))
+                {
+                    var responseBody = reader.ReadLine();
+                    return Ok(responseBody != null ? responseBody : "{}");
+                }
+            }
         }
 
         [HttpGet("memoryinfo")]

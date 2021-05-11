@@ -1,29 +1,13 @@
 # Usage
 
-1. Update the Dockerfile to include a real `NEW_RELIC_LICENSE_KEY`
-
-2. Build and run the docker file
+1. Build and run the docker file
 
 ```shell
 docker build --network host -t dotnet-new-relic-memory-leak .
 docker run --network host --rm dotnet-new-relic-memory-leak
 ```
 
-3. Exec into the container
-
-```shell
-# Something like this should work if you only have one container running.
-# Otherwise you'll need to look up the container name with `docker ps`
-docker exec -it --privileged "$(docker ps | tail -1 | awk '{print $1}')" bash
-```
-
-4. Run something like the following inside the container to make sure new relic is working correctly:
-
-```shell
-tail -f /app/newrelic/logs/newrelic_agent_DotNetNewRelicMemoryLeak.log
-```
-
-5. To get memory info from the container you can hit the /MemoryLeak/memoryinfo endpoint from outside the container:
+2. To get memory info from the container you can hit the `/MemoryLeak/memoryinfo` endpoint from outside the container:
 
 ```shell
 while true; do date; curl -v http://localhost:5001/MemoryLeak/memoryinfo | jq .; sleep 5; done
@@ -53,13 +37,17 @@ The output of the memory info endpoint looks something like this. Pay close atte
 }
 ```
 
-6. To reconfigure ServicePointManager hit the `/MemoryLeak` endpoint. This will set `ServicePointManager.CheckCertificateRevocationList = true;`:
+3. To make some requests with the app hit the `/MemoryLeak/makerequest` endpoint. **The request will fail with a 500**. It doesn't need to work to reveal the problem. I'd suggest making a few such requests until you are comfortable that the app is in a stable place with regard to memory.
+
+4. To reconfigure ServicePointManager hit the `/MemoryLeak` endpoint. This will set `ServicePointManager.CheckCertificateRevocationList = true;`:
 
 ```shell
 curl -v http://localhost:5001/MemoryLeak/
 ```
 
-7. To force a GC (to ensure that accumulated memory isn't GC-able) hit the `/MemoryLeak/gccollect` endpoint:
+After executing this endpoint, subsequent requests to `/MemoryLeak/makerequest` will cause the `privateMemorySize` to grow noticeably.
+
+5. To force a GC (to ensure that accumulated memory isn't GC-able) hit the `/MemoryLeak/gccollect` endpoint:
 ```shell
 curl -v http://localhost:5001/MemoryLeak/gccollect
 ```

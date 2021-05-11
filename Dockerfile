@@ -23,14 +23,6 @@ COPY DotNetNewRelicMemoryLeak /src/DotNetNewRelicMemoryLeak
 # Create dotnet artifacts, output to /app
 RUN dotnet publish --no-restore --configuration Release --output /app /src/DotNetNewRelicMemoryLeak.sln
 
-ENV CORECLR_ENABLE_PROFILING=1 \
-    CORECLR_PROFILER={36032161-FFC0-4B61-B559-F6C5D41BAE5A} \
-    CORECLR_NEWRELIC_HOME="/app/newrelic" \
-    CORECLR_PROFILER_PATH="/app/newrelic/libNewRelicProfiler.so" \
-    NEW_RELIC_DISTRIBUTED_TRACING_ENABLED=true \
-    NEW_RELIC_APP_NAME="DotNetNewRelicMemoryLeak" \
-    NEW_RELIC_LICENSE_KEY="YOUR KEY HERE"
-
 WORKDIR /app
 EXPOSE 5001
 ENTRYPOINT ["dotnet", "/app/DotNetNewRelicMemoryLeak.dll"]
