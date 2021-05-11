@@ -1,6 +1,6 @@
+using DotNetNewRelicMemoryLeak;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
-using DotNetNewRelicMemoryLeak;
 
 await Host.CreateDefaultBuilder(args)
     .ConfigureWebHostDefaults(webBuilder =>

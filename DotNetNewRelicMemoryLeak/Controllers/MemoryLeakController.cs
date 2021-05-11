@@ -1,16 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using System.IO;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Diagnostics;
-using System.Net.Http;
 
 namespace DotNetNewRelicMemoryLeak.Controllers
 {
@@ -24,7 +18,7 @@ namespace DotNetNewRelicMemoryLeak.Controllers
         public MemoryLeakController(ILogger<MemoryLeakController> logger)
         {
             _logger = logger;
-            _httpClient = new HttpClient(new HttpClientHandler()
+            _httpClient = new HttpClient(new HttpClientHandler
             {
                 AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
             });
@@ -63,7 +57,7 @@ namespace DotNetNewRelicMemoryLeak.Controllers
             {
                 InstanceId = Environment.MachineName,
                 TotalMemory = GetBytesReadable(GC.GetTotalMemory(false)),
-                TotalAllocated = GetBytesReadable(GC.GetTotalAllocatedBytes(false)),
+                TotalAllocated = GetBytesReadable(GC.GetTotalAllocatedBytes()),
                 Gen1CollectionCount = GC.CollectionCount(1),
                 Gen2CollectionCount = GC.CollectionCount(2),
                 Gen3CollectionCount = GC.CollectionCount(3),
