@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
@@ -43,6 +44,9 @@ namespace DotNetNewRelicMemoryLeak.Controllers
         [HttpGet("makerequest")]
         public async Task<ActionResult> MakeRequest()
         {
+            NewRelic.Api.Agent.NewRelic.RecordCustomEvent("DotNetNewRelicMemoryLeak",
+                    new Dictionary<string, object>() { {"type", "Dummy"} });
+
             var response = await _httpClient.GetAsync("https://collector.newrelic.com");
             return Ok(response.Content.ReadAsStringAsync());
         }
