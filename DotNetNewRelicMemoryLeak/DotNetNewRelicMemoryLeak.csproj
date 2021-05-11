@@ -7,7 +7,6 @@
 
     <ItemGroup>
         <PackageReference Include="NewRelic.Agent" Version="8.39.2" />
-        <PackageReference Include="NewRelic.Agent.Api" Version="8.39.2" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.1.4" />
     </ItemGroup>
 
