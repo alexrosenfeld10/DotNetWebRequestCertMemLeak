@@ -41,11 +41,38 @@ namespace DotNetNewRelicMemoryLeak.Controllers
             return Ok("GC complete");
         }
 
+        public IDictionary<string, object> StandardFields()
+        {
+            return new Dictionary<string, object>() {
+                {"id", Guid.NewGuid().ToString()}
+            };
+        }
+
         [HttpGet("makerequest")]
         public async Task<ActionResult> MakeRequest()
         {
+            try
+            {
+                var agent = global::NewRelic.Api.Agent.NewRelic.GetAgent();
+                var transaction = agent.CurrentTransaction;
+                if (transaction != null) {
+                    foreach (var kvp in StandardFields())
+                    {
+                        transaction.AddCustomAttribute(kvp.Key, kvp.Value);
+                    }
+                }
+            }
+            catch(Exception e)
+            {
+                Console.WriteLine("Error decorating NewRelic transaction");
+                // bury
+            }
+
             NewRelic.Api.Agent.NewRelic.RecordCustomEvent("DotNetNewRelicMemoryLeak",
-                    new Dictionary<string, object>() { {"type", "Dummy"} });
+                    new Dictionary<string, object>() {
+                        {"type", "Dummy"},
+                        {"id", Guid.NewGuid().ToString()
+                    }});
 
             var response = await _httpClient.GetAsync("https://collector.newrelic.com");
             return Ok(response.Content.ReadAsStringAsync());
