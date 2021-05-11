@@ -1,41 +1,39 @@
 # Usage
 
 1. Build and run the docker file
-1. Exec into and run the following inside the container:
 
 ```shell
-while true; do
-  date
-  echo
-  curl localhost:5001/MemoryLeak
-  echo
-  echo
-  ps aux
-  echo
-  sleep 5
-done
+docker build --network host -t dotnet-new-relic-memory-leak .
+docker run --network host --rm dotnet-new-relic-memory-leak
 ```
 
-You should see memory usage climb over time. For example:
+2. Exec into the container
 
-
-```text
-USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
-root         1  2.9  6.7 26223152 270856 pts/0 Ssl+ 16:39   0:09 dotnet DotNetNewRelicMemoryLeak.dll
-
-... some 1 hour or so later ...
-
-USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
-root         1  2.1 28.4 26976316 1146852 pts/0 Ssl+ 16:39   0:41 dotnet DotNetNewRelicMemoryLeak.dll
+```shell
+# Something like this should work if you only have one container running.
+# Otherwise you'll need to look up the container name with `docker ps`
+docker exec -it --privileged "$(docker ps | tail -1 | awk '{print $1}')" bash
 ```
 
-## Notes
+3. Run something like the following inside the container to make sure new relic is working correctly:
 
-I've noticed the memory usage will climb a bunch, then get collected, but shortly after continue to climb.
-The collection cycles don't seem to lower the memory back to the original level, for example it'll go from 29% down to 22%, then climb well beyond up to 40% or more.
-and then continue climbing again from there, instead of collecting all the way down to the original 8% or so the app has after the first few calls.
+```shell
+tail -f /app/newrelic/logs/newrelic_agent_DotNetNewRelicMemoryLeak.log
+```
 
-You can imagine the severity of the issue querying real production data if we see climbs to around 1/3 memory pressure on a simple selection of 4 rows of data.
+4. To get memory info from the container you can hit the /MemoryLeak/memoryinfo endpoint from outside the container:
 
-You'll notice that changing `CORECLR_ENABLE_PROFILING` to 0 in the docker container will alleviate the memory issues almost entirely.
-Memory will float around 9% instead of increasing indefinitely, at least from our testing.
+```shell
+while true; do date; curl -v http://localhost:5001/MemoryLeak/memoryinfo | jq .; sleep 5; done
+```
+
+4. To reconfigure ServicePointManager hit the `/MemoryLeak` endpoint. This will set `ServicePointManager.CheckCertificateRevocationList = true;`:
+
+```shell
+curl -v http://localhost:5001/MemoryLeak/
+```
+
+5. To force a GC (to ensure that accumulated memory isn't GC-able) hit the `/MemoryLeak/gccollect` endpoint:
+```shell
+curl -v http://localhost:5001/MemoryLeak/gccollect
+```
